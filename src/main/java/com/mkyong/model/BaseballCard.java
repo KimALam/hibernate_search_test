@@ -1,5 +1,6 @@
 package com.mkyong.model;
 
+import com.mkyong.dao.UserIdFilterFactory;
 import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
 import org.apache.lucene.analysis.standard.ClassicTokenizerFactory;
 import org.hibernate.search.annotations.*;
@@ -17,6 +18,7 @@ import java.util.List;
                 @TokenFilterDef(factory = LowerCaseFilterFactory.class)
         }
 )
+@FullTextFilterDef(name = "BaseballFilterByUserId", impl = UserIdFilterFactory.class)
 public class BaseballCard {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,12 +39,26 @@ public class BaseballCard {
     @Column(name = "card_year")
     private int year;
 
-    @IndexedEmbedded
+    @IndexedEmbedded(includePaths = "id")
     @ManyToOne
     @JoinColumn(name = "user_id")
     private CardUser cardUser;
     public CardUser getCardUser() { return cardUser; }
     public void setCardUser(CardUser cardUser) { this.cardUser = cardUser; }
+
+/*    @Field
+    @Column(name = "user_id", insertable = false, updatable = false)
+    private Long userId;
+
+    public Long getUserId() {
+        System.out.println("getUserId() " + userId);
+        return userId;*/
+//    }
+//    public void setUserId(Long userId) {
+//        System.out.println("setUserId() " + userId);
+//        this.userId = userId;
+//    }
+
 //    @OneToMany(mappedBy = "card", fetch = FetchType.EAGER)
 //    private List<CardUser> users = new ArrayList<>();
 //    public List<CardUser> getUsers() { return users; }

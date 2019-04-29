@@ -33,10 +33,10 @@ public class BaseballSearchRepositoryImpl implements BaseballSearchRepository {
 
     @Override
     @Transactional
-    public List<BaseballCard> fuzzySearch(String kw1, String kw2, Pageable pageable) {
+    public List<BaseballCard> fuzzySearch(String q1, String q2, Pageable pageable) {
         initializeHibernateSearch();
 
-        System.out.println("fuzzySearch| searchTerm=" + kw1);
+        System.out.println("fuzzySearch| q1: " + q1 + ", q2: " + q2);
 
         FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(entityManager);
 
@@ -46,42 +46,41 @@ public class BaseballSearchRepositoryImpl implements BaseballSearchRepository {
                 .get();
 
         // Lucene query
-/*        Query luceneQuery = qb.keyword()
+        Query luceneQuery = qb.keyword()
                 .wildcard()
 //                .fuzzy()
 //                .withEditDistanceUpTo(1)
 //                .withPrefixLength(1)
 //                .onFields("name", "rarityLevel", "cardUser.email")
-                .onFields("name", "rarityLevel", "cardUser.email")
-                .matching(searchTerm)
-                .createQuery();*/
-
-        Query subq1 = qb.keyword()
-                .wildcard()
-//                .fuzzy()
-//                .withEditDistanceUpTo(1)
-//                .withPrefixLength(1)
 //                .onFields("name", "rarityLevel", "cardUser.email")
                 .onFields("name")
-                .matching(kw1)
+                .matching(q2)
+                .createQuery();
+
+/*        Query subq1 = qb.keyword()
+                .wildcard()
+                .onFields("name")
+                .matching(q2)
                 .createQuery();
 
         Query subq2 = qb.keyword()
-                .onFields("cardUser.id")
-                .matching(kw2)
+                .onFields("userId")
+                .matching(Long.parseLong(q1))
                 .createQuery();
 
         Query luceneQuery = qb.bool()
                 .must(subq1)
                 .must(subq2)
-                .createQuery();
+                .createQuery();*/
 
-        FullTextQuery jpaQuery = fullTextEntityManager.createFullTextQuery(luceneQuery, BaseballCard.class);
-        jpaQuery.setFirstResult(pageable.getPageNumber());
-        jpaQuery.setMaxResults(pageable.getPageSize());
+        FullTextQuery fullTextQuery = fullTextEntityManager.createFullTextQuery(luceneQuery, BaseballCard.class);
+        // filter
+        fullTextQuery.enableFullTextFilter("BaseballFilterByUserId").setParameter("userId", Long.parseLong(q1));
+//        jpaQuery.setFirstResult(pageable.getPageNumber());
+//        jpaQuery.setMaxResults(pageable.getPageSize());
 
         // Sort
-        org.apache.lucene.search.Sort sort = new org.apache.lucene.search.Sort();
+/*        org.apache.lucene.search.Sort sort = new org.apache.lucene.search.Sort();
 
         Iterator<Sort.Order> orders = pageable.getSort().iterator();
         Sort.Order o = orders.next();
@@ -90,11 +89,11 @@ public class BaseballSearchRepositoryImpl implements BaseballSearchRepository {
         } else {
             sort.setSort(new SortField(o.getProperty(), SortField.Type.STRING, true));
         }
-        jpaQuery.setSort(sort);
+        jpaQuery.setSort(sort);*/
 
-
+        System.out.println("parameters: " + fullTextQuery.getParameters());
         // execute search
-        List<BaseballCard> baseballCardList = jpaQuery.getResultList();
+        List<BaseballCard> baseballCardList = fullTextQuery.getResultList();
 
         System.out.println("size: " + baseballCardList.size());
         for (BaseballCard card : baseballCardList) {
